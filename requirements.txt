@@ -1,0 +1,6 @@
+# Pinned to the versions the app was built and tested against.
+fastapi==0.139.0
+uvicorn==0.50.2
+yfinance==1.5.1
+pandas==3.0.3
+numpy==2.5.1

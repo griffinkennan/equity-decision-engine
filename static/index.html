@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equity Decision Engine</title>
+<link rel="stylesheet" href="/static/app.css?v=1.4.2">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">EDE</span>
+    <div>
+      <h1>Equity Decision Engine</h1>
+      <p class="tagline">Fundamental research &amp; rating terminal</p>
+    </div>
+  </div>
+  <form id="search-form" class="search">
+    <div class="search-wrap">
+      <input id="ticker-input" type="text" placeholder="Ticker or company name (e.g. AAPL, Costco)" autocomplete="off" spellcheck="false">
+      <button type="button" id="search-clear" class="search-clear" aria-label="Clear search" title="Clear">✕</button>
+      <div id="ac-list" class="ac-list hidden"></div>
+    </div>
+    <button type="submit" id="analyze-btn">Analyze</button>
+  </form>
+  <nav class="tabs">
+    <button class="tab active" data-view="report">Report</button>
+    <button class="tab" data-view="compare">Compare</button>
+    <button class="tab" data-view="watchlist">Watchlist</button>
+  </nav>
+</header>
+
+<main>
+  <div id="status" class="status hidden"></div>
+
+  <!-- ============ REPORT VIEW ============ -->
+  <section id="view-report" class="view">
+    <div id="report-empty" class="empty-state">
+      <h2>Analyze any publicly traded stock</h2>
+      <p>Enter a ticker above to generate a full investment breakdown: rating, score,
+      valuation scenarios, red flags, peer comparison, catalysts and more.</p>
+      <div class="chips" id="example-chips">
+        <button class="chip">AAPL</button><button class="chip">MSFT</button>
+        <button class="chip">NVDA</button><button class="chip">JPM</button>
+        <button class="chip">COST</button><button class="chip">XOM</button>
+      </div>
+      <div class="chips" id="recent-chips"></div>
+    </div>
+    <div id="report" class="hidden"></div>
+  </section>
+
+  <!-- ============ COMPARE VIEW ============ -->
+  <section id="view-compare" class="view hidden">
+    <div class="card">
+      <h2>Compare up to 5 stocks</h2>
+      <form id="compare-form" class="compare-form">
+        <input id="compare-input" type="text" placeholder="Comma-separated tickers, e.g. AAPL, MSFT, GOOGL">
+        <button type="submit">Compare</button>
+      </form>
+      <div class="sort-row hidden" id="compare-sort-row">
+        <span>Sort by:</span>
+        <select id="compare-sort">
+          <option value="total_score">Total score</option>
+          <option value="expected_upside">Upside potential</option>
+          <option value="risk">Risk (net debt/EBITDA)</option>
+          <option value="valuation">Valuation (fwd P/E)</option>
+          <option value="growth">Revenue growth</option>
+          <option value="fcf">FCF yield</option>
+          <option value="momentum">12-mo momentum</option>
+          <option value="confidence">Confidence</option>
+        </select>
+      </div>
+      <div id="compare-results"></div>
+    </div>
+  </section>
+
+  <!-- ============ WATCHLIST VIEW ============ -->
+  <section id="view-watchlist" class="view hidden">
+    <div class="card">
+      <h2>Watchlist</h2>
+      <p class="muted">Saved stocks with their latest rating. Click a ticker to re-analyze; ratings are recorded over time.</p>
+      <div class="section-actions">
+        <button class="secondary" id="wl-refresh">⟳ Refresh all ratings</button>
+        <div class="sort-row" style="margin:0">
+          <span>Sort by:</span>
+          <select id="wl-sort">
+            <option value="score">Total score</option>
+            <option value="upside">Upside potential</option>
+            <option value="growth">Revenue growth</option>
+            <option value="fcf">FCF yield</option>
+            <option value="valuation">Valuation (fwd P/E)</option>
+            <option value="risk">Risk (net debt/EBITDA)</option>
+            <option value="momentum">12-mo momentum</option>
+            <option value="confidence">Confidence</option>
+            <option value="added">Date added</option>
+          </select>
+        </div>
+      </div>
+      <div id="watchlist-body"></div>
+    </div>
+  </section>
+
+  <footer class="disclaimer">
+    <strong>Disclaimer:</strong> This tool is for research and education only. It is not financial
+    advice. The model may be wrong, financial data may be delayed or inaccurate, assumptions may be
+    incorrect, and users should do their own research before making investment decisions.
+  </footer>
+</main>
+<script src="/static/app.js?v=1.4.2"></script>
+</body>
+</html>
