@@ -11,5 +11,8 @@
 # 1.4.0: News & Sentiment factor (4% base weight) — headline tone lexicon,
 #        market regime (S&P trend + VIX), sector-ETF trend; market regime also
 #        informs the Timing rating
-MODEL_VERSION = "1.4.0"
+# 1.5.0: SEC EDGAR official 10-K history (10-20y, no key needed), options-
+#        implied expected move (feeds Timing), FRED live macro readings,
+#        Finnhub insider/recommendation enrichment (key-gated, fail-soft)
+MODEL_VERSION = "1.5.0"
 DATA_SOURCE = "Yahoo Finance (via yfinance)"

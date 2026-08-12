@@ -241,6 +241,55 @@ def _etf_perf(etf_hist, days):
     return float(close.iloc[-1] / close.iloc[-1 - days] - 1)
 
 
+def _options_implied(t: yf.Ticker, price, next_earnings=None):
+    """Options-market expected move: ATM straddle mid / spot, at the expiry
+    nearest the next earnings date (or ~30 days out). None if no options."""
+    try:
+        expiries = t.options
+        if not expiries or not price:
+            return None
+        import datetime as _dt
+        today = _dt.date.today()
+        target = None
+        if next_earnings:
+            try:
+                target = _dt.date.fromisoformat(str(next_earnings)[:10])
+            except ValueError:
+                target = None
+        if target is None or target < today:
+            target = today + _dt.timedelta(days=30)
+        exp = next((e for e in expiries
+                    if _dt.date.fromisoformat(e) >= target), expiries[-1])
+        chain = t.option_chain(exp)
+
+        def atm(df):
+            if df is None or df.empty or "strike" not in df:
+                return None, None
+            idx = (df["strike"] - price).abs().idxmin()
+            row = df.loc[idx]
+            bid, ask = _num(row.get("bid")), _num(row.get("ask"))
+            mid = (bid + ask) / 2 if bid and ask else _num(row.get("lastPrice"))
+            return (mid if mid and mid > 0 else None,
+                    _num(row.get("impliedVolatility")))
+
+        c_mid, c_iv = atm(chain.calls)
+        p_mid, p_iv = atm(chain.puts)
+        if not c_mid or not p_mid:
+            return None
+        ivs = [v for v in (c_iv, p_iv) if v]
+        return {
+            "expiry": exp,
+            "days": (_dt.date.fromisoformat(exp) - today).days,
+            "expected_move_pct": round((c_mid + p_mid) / price, 4),
+            "atm_iv": round(sum(ivs) / len(ivs), 4) if ivs else None,
+            "anchored_to_earnings": next_earnings is not None,
+            "note": "ATM straddle mid ÷ spot price — the move the options market "
+                    "has priced in by that expiry (either direction).",
+        }
+    except Exception:
+        return None
+
+
 def _fetch_estimates(t: yf.Ticker):
     est = {}
     try:
@@ -416,22 +465,30 @@ def fetch_snapshot(ticker: str, use_cache=True) -> dict:
     qseries = _build_series(qinc, qbal, qcf, prefix="q_")
 
     # optional FMP enrichment: longer history + earnings-call transcripts
-    from . import fmp
-    data_source = "Yahoo Finance (via yfinance)"
+    from . import fmp, edgar
+    sources = ["Yahoo Finance"]
     transcript = None
     if fmp.enabled():
         try:
             if fmp.extend_annual_series(ticker, series):
-                data_source = "Yahoo Finance + Financial Modeling Prep (extended history)"
+                sources.append("FMP")
         except Exception:
             pass
         try:
             transcript = fmp.transcript_analysis(ticker)
         except Exception:
             transcript = None
+    # SEC EDGAR: official 10-K history, extends beyond both Yahoo and FMP
+    try:
+        if edgar.extend_annual_series(ticker, series):
+            sources.append("SEC EDGAR")
+    except Exception:
+        pass
+    data_source = " + ".join(sources) + (" (extended history)" if len(sources) > 1 else " (via yfinance)")
 
     momentum = compute_momentum(hist, spy, etf, etf_symbol)
     price = momentum.get("price") or _get(info, "currentPrice", "regularMarketPrice", "previousClose")
+    options_implied = _options_implied(t, price, calendar.get("next_earnings_date"))
     metrics = _build_metrics(info, series, qseries, price)
     metrics["valuation_history"] = _valuation_history(hist, series, metrics)
     dq = _data_quality(info, series, metrics, estimates, momentum,
@@ -449,6 +506,7 @@ def fetch_snapshot(ticker: str, use_cache=True) -> dict:
         "price": price,
         "data_source": data_source,
         "transcript_analysis": transcript,
+        "options_implied": options_implied,
         "last_statement_date": series["revenue"][-1]["date"] if series.get("revenue") else None,
         "fetched_at": pd.Timestamp.now().isoformat(timespec="seconds"),
         "series": series,

@@ -394,6 +394,11 @@ function renderReport(r) {
   <div class="grid cols-2" data-tab="market">
     <div class="card"><h2>Catalysts</h2>
       <p class="muted">${esc(r.catalyst_summary)}</p>
+      ${r.rec_trend?.bullish_ratio != null ? `<p style="font-size:.88rem;margin-bottom:8px">
+        <span class="muted">Street:</span> ${(r.rec_trend.bullish_ratio * 100).toFixed(0)}% of analysts
+        rate Buy or better (${r.rec_trend.strong_buy ?? 0} strong buy / ${r.rec_trend.buy ?? 0} buy /
+        ${r.rec_trend.hold ?? 0} hold / ${(r.rec_trend.sell ?? 0) + (r.rec_trend.strong_sell ?? 0)} sell)
+        ${r.rec_trend.drift_label ? `— ${esc(r.rec_trend.drift_label)} over 3 months` : ""}</p>` : ""}
       ${r.catalysts.map(c => `<div class="flag">
         <span class="sev ${c.direction === "Positive" ? "sev-positive" : c.direction === "Negative" ? "sev-high" : "sev-low"}">${esc(c.direction)}</span>
         <div><strong>${esc(c.catalyst)}</strong>
@@ -403,6 +408,12 @@ function renderReport(r) {
       ${r.macro.rows.map(x => `<div class="flag">
         <span class="sev ${x.direction === "help" ? "sev-positive" : x.direction === "hurt" ? "sev-high" : "sev-low"}">${esc(x.direction)}</span>
         <div><strong>${esc(x.factor)}</strong><div class="muted">${esc(x.note)}</div></div></div>`).join("")}
+      ${r.macro.live ? `<h3 class="sub">Live readings (${esc(r.macro.live.source)})</h3>
+        <table><tr><th>Indicator</th><th class="num">Now</th><th class="num">3-mo Δ</th><th>Maps to</th></tr>
+        ${r.macro.live.rows.map(x => `<tr><td>${esc(x.indicator)}</td>
+          <td class="num">${x.value}${esc(x.unit)}</td>
+          <td class="num ${x.change_3m > 0 ? "neg" : x.change_3m < 0 ? "pos" : "muted"}">${x.change_3m != null ? (x.change_3m > 0 ? "+" : "") + x.change_3m : "—"}</td>
+          <td class="muted">${esc(x.maps_to)}</td></tr>`).join("")}</table>` : ""}
       <h3 class="sub">Earnings call commentary</h3>
       ${renderCommentary(r.earnings_commentary)}</div>
   </div>
@@ -546,6 +557,8 @@ function keyStats(r) {
     ["Net debt / EBITDA", fmtX(m.net_debt_to_ebitda)],
     ["Dividend yield", fmtPct(m.dividend_yield)],
     ["From 52-wk high", fmtPct(mom.drawdown_from_high, true)],
+    ["Options-implied move", r.options_implied
+      ? `±${(r.options_implied.expected_move_pct * 100).toFixed(1)}% by ${r.options_implied.expiry}` : "n/a"],
     ["Volatility (ann.)", fmtPct(mom.volatility_annualized)],
     ["Next earnings", r.calendar?.next_earnings_date ? String(r.calendar.next_earnings_date).slice(0, 10) : "n/a"],
   ];

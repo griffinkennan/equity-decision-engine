@@ -52,6 +52,11 @@ def timing_rating(snap, valn):
             pass
     if (mom.get("volatility_annualized") or 0) > 0.65:
         points -= 1; reasons.append("volatility is very high")
+    oi = snap.get("options_implied")
+    if oi and (oi.get("expected_move_pct") or 0) > 0.08 and (oi.get("days") or 99) <= 35:
+        points -= 1
+        reasons.append(f"the options market prices a ±{oi['expected_move_pct']:.0%} move "
+                       f"by {oi['expiry']} — sizeable near-term event risk")
     regime = (snap.get("_sentiment") or {}).get("market", {}).get("regime")
     if regime == "Risk-off":
         points -= 1; reasons.append("broad market is in a risk-off regime")

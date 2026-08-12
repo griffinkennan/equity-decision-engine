@@ -32,9 +32,21 @@ python -m venv .venv                       # first time only
 Open http://localhost:8642 and search a ticker or company name.
 Run the test suite with `.venv\Scripts\python -m pytest tests -q`.
 
-**Data source:** Yahoo Finance via `yfinance` — no API key required. The source
-is displayed on every report; if a field is unavailable it is counted against
-the Data Quality Score rather than silently guessed.
+**Data sources** (each optional layer fails soft; every report states exactly
+which sources fed it):
+
+| Source | Key needed | Adds |
+|---|---|---|
+| Yahoo Finance (`yfinance`) | none | prices, statements (~4y), estimates, news, options |
+| **SEC EDGAR** | none | official as-filed 10-K history — 10–20 years of fundamentals |
+| Financial Modeling Prep | free key | statements to 5y; transcripts on paid tiers |
+| FRED (Federal Reserve) | free key | live macro readings (rates, CPI, credit spreads) |
+| Finnhub | free key | insider transaction share counts, analyst rec trends |
+
+Options-implied expected move (ATM straddle at the expiry nearest the next
+earnings date) is computed from Yahoo option chains and feeds the Timing
+rating. Missing data always counts against the Data Quality Score rather than
+being silently guessed.
 
 **Optional upgrade:** copy `.env.example` to `.env` and add a
 [Financial Modeling Prep](https://financialmodelingprep.com) API key (uses the

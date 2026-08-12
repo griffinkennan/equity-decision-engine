@@ -24,8 +24,16 @@ STATIC = Path(__file__).resolve().parent.parent / "static"
 
 @app.get("/api/config")
 def api_config():
-    from . import fmp
-    return {"model_version": MODEL_VERSION, "fmp_enabled": fmp.enabled()}
+    from . import fmp, finnhub, macro_data
+    return {"model_version": MODEL_VERSION,
+            "providers": {
+                "yahoo": True,
+                "sec_edgar": True,   # no key required
+                "fmp": fmp.enabled(),
+                "fred": macro_data.enabled(),
+                "finnhub": finnhub.enabled(),
+            },
+            "fmp_enabled": fmp.enabled()}
 
 
 @app.get("/api/search")
@@ -184,7 +192,10 @@ def api_export_csv(ticker: str):
 
 @app.get("/")
 def index():
-    return FileResponse(STATIC / "index.html")
+    # never cache the HTML shell — it carries the ?v= cache-busting refs for
+    # the JS/CSS, so a stale shell pins stale assets (OneDrive mtimes make
+    # ETag/304 unreliable here)
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-store"})
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")

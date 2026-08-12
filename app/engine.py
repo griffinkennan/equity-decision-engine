@@ -28,6 +28,25 @@ def analyze(ticker: str) -> dict:
     from .sentiment import build_sentiment
     snap["_sentiment"] = build_sentiment(snap)
 
+    # optional Finnhub enrichment: insider share counts + street rec trend
+    from . import finnhub
+    if finnhub.enabled():
+        try:
+            ins = finnhub.insider_summary(snap["ticker"])
+            if ins:
+                h = snap["holders"]
+                if h.get("insider_buys") is None:
+                    h["insider_buys"] = ins["buy_transactions"]
+                    h["insider_sells"] = ins["sell_transactions"]
+                    h["insider_net_shares"] = ins["net_shares"]
+                h["finnhub_insiders"] = ins
+        except Exception:
+            pass
+        try:
+            snap["_rec_trend"] = finnhub.recommendation_trend(snap["ticker"])
+        except Exception:
+            snap["_rec_trend"] = None
+
     peers = peer_comparison(snap)
     flags = detect_red_flags(snap, ctype)
     snap["_flags"] = flags
@@ -128,7 +147,8 @@ def analyze(ticker: str) -> dict:
         "risk_summary": nar.risk_summary(snap, flags, ctype),
         "catalysts": nar.catalysts(snap),
         "catalyst_summary": _catalyst_summary(snap),
-        "macro": nar.macro_sensitivity(snap),
+        "macro": _macro_with_live(snap),
+        "rec_trend": snap.get("_rec_trend"),
         "earnings_commentary": snap.get("transcript_analysis") or {
             "available": False,
             "note": _commentary_fallback_note(),
@@ -139,6 +159,7 @@ def analyze(ticker: str) -> dict:
         "quant_checks": {**snap["_quant"],
                          "valuation_history": snap["metrics"].get("valuation_history")},
         "sentiment": snap["_sentiment"],
+        "options_implied": snap.get("options_implied"),
         "wall_street": {
             "consensus": (snap.get("info_subset") or {}).get("recommendationKey"),
             "mean_score": (snap.get("info_subset") or {}).get("recommendationMean"),
@@ -172,6 +193,23 @@ def analyze(ticker: str) -> dict:
                        "before making investment decisions."),
     }
     return report
+
+
+def _macro_with_live(snap):
+    """Sector macro-sensitivity mapping + live FRED readings when available."""
+    from . import narrative as nar
+    from . import macro_data
+    macro = nar.macro_sensitivity(snap)
+    try:
+        live = macro_data.current_readings()
+    except Exception:
+        live = None
+    macro["live"] = live
+    if live:
+        hot = [f"{r['indicator']} {r['value']}{r['unit']} ({r['direction']})"
+               for r in live["rows"][:4]]
+        macro["summary"] += " Current readings: " + "; ".join(hot) + "."
+    return macro
 
 
 def _commentary_fallback_note():
