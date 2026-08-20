@@ -1,9 +1,9 @@
 # Equity Decision Engine
 
+![tests](https://github.com/griffinkennan/equity-decision-engine/actions/workflows/tests.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)
-![Tests](https://img.shields.io/badge/tests-45%20passing-brightgreen)
-![License](https://img.shields.io/badge/use-research%20%26%20education-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 A stock-research dashboard: enter any publicly traded ticker and get a
 transparent, explainable investment breakdown — **Strong Buy / Buy / Hold /
@@ -74,7 +74,8 @@ margins, FCF, debt, dilution…) · Raw JSON of every input.
 
 ## Tests
 
-- `python -m pytest tests -q` — 45 offline unit tests over the scoring bands,
+- `python -m pytest tests -q` — 50 offline unit tests (run in CI on every
+  push) over the scoring bands,
   weight normalization, company-type classification, valuation math (scenario
   ordering, probabilities, dilution and margin effects), red flags,
   Piotroski/Altman arithmetic, sentiment lexicon, and the demo cache. No
