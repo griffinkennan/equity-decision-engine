@@ -21,6 +21,8 @@ a Buy if the price leaves no upside.
 > **Disclaimer:** research and education only — not financial advice. Data may
 > be delayed or wrong; assumptions may be incorrect. Do your own research.
 
+![Equity Decision Engine — MSFT report overview](docs/screenshot.png)
+
 ## Quick start
 
 ```powershell
